@@ -1,0 +1,1 @@
+**Note for 2024-11-24, I literally built this yesterday so I'm still tweaking some stuff and fixing some stuff**

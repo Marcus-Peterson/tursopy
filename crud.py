@@ -2,7 +2,7 @@
 import os
 import requests
 from dotenv import load_dotenv
-
+import json
 # Load environment variables
 load_dotenv()
 
@@ -14,6 +14,29 @@ class TursoClient:
             'Authorization': f'Bearer {self.auth_token}',
             'Content-Type': 'application/json'
         }
+
+    def create_database(self,org_name, db_name, group_name, api_token):
+        url = f"https://api.turso.tech/v1/organizations/{org_name}/databases"
+    
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json"
+        }
+    
+        data = {
+            "name": db_name,
+            "group": group_name
+        }
+    
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+    
+        if response.status_code == 201:
+            print(f"Database '{db_name}' created successfully.")
+            return response.json()
+        else:
+            print(f"Failed to create database. Status code: {response.status_code}")
+            print(f"Response: {response.text}")
+            return None
 
     def execute_query(self, sql, args=None):
         """
@@ -162,7 +185,7 @@ class TursoCRUD:
         """Insert a record into a table."""
         columns = ', '.join(data.keys())
         placeholders = ', '.join(['?' for _ in data])
-        args = [{"type": self._infer_type(value), "value": str(value)} for value in data.values()]
+        args = list(data.values())  # Pass plain values
         sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
         return self.connection.execute_query(sql, args)
 
@@ -176,9 +199,10 @@ class TursoCRUD:
     def update(self, table, data, where, args):
         """Update records in a table."""
         set_clause = ', '.join([f"{key} = ?" for key in data])
-        update_args = [{"type": self._infer_type(value), "value": str(value)} for value in data.values()]
+        update_args = list(data.values())  # Use plain values
         sql = f"UPDATE {table} SET {set_clause} WHERE {where}"
-        return self.connection.execute_query(sql, update_args + args)
+        return self.connection.execute_query(sql, update_args + [arg['value'] for arg in args])  # Flatten args
+
 
     def delete(self, table, where, args):
         """Delete records from a table."""
