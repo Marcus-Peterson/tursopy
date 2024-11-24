@@ -24,7 +24,7 @@ If pip install doesn't work, clone the project or download the zip from the real
 1. Set up your environment variables:
 
 ```env
-TURSO_DATABASE_URL="https:your_database_url"
+TURSO_DATABASE_URL="https://your_database_url"
 TURSO_AUTH_TOKEN="your_auth_token"
 ```
 When you use the turso dashboard to generate urls and auth token, the url will be libsql: change that to https:
