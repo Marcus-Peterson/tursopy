@@ -154,4 +154,6 @@ def main_2():
         logging.error("Invalid data failed validation: %s", e)
 
 if __name__ == "__main__":
-    main_2()
+    #main_1()           #Uncomment to test
+    #main_2()           #Uncomment to test
+    pass
