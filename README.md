@@ -24,9 +24,10 @@ pip install tursopy
 1. Set up your environment variables:
 
 ```env
-TURSO_DATABASE_URL=your_database_url
-TURSO_AUTH_TOKEN=your_auth_token
+TURSO_DATABASE_URL=https:your_database_url
+TURSO_AUTH_TOKEN=https:your_auth_token
 ```
+When you use the turso dashboard to generate urls and auth token, the url will ne libsql:, change that to https:
 
 2. Basic usage:
 
