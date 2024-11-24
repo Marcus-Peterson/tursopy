@@ -14,6 +14,10 @@ A lightweight, dependency-minimal Python client for Turso databases. Born out of
 - Database creation utilities
 
 ## Installation
+```
+pip install turso-python
+```
+If pip install doesn't work, clonse the project or download the zip from the realease section
 
 ## Quick Start
 
