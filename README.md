@@ -218,7 +218,7 @@ Contributions are welcome! As a solo developer project, I appreciate any help in
 
 ## License
 
-MIT License - See LICENSE file for details
+Apache 2.0 License
 
 ## Support
 
