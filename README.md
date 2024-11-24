@@ -15,10 +15,6 @@ A lightweight, dependency-minimal Python client for Turso databases. Born out of
 
 ## Installation
 
-```bash
-pip install tursopy
-```
-
 ## Quick Start
 
 1. Set up your environment variables:
