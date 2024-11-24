@@ -32,7 +32,8 @@ When you use the turso dashboard to generate urls and auth token, the url will n
 2. Basic usage:
 
 ```python
-from tursopy import TursoConnection, TursoCRUD
+from connection import TursoConnection
+from crud import TursoCRUD
 
 # Initialize connection
 connection = TursoConnection()
@@ -53,7 +54,7 @@ result = crud.read("users", "name = ?", [{"type": "text", "value": "John Doe"}])
 The `TursoConnection` class handles all communication with the Turso API:
 
 ```python
-from tursopy import TursoConnection
+from connection import TursoConnection
 
 # Using environment variables
 connection = TursoConnection()
@@ -122,7 +123,7 @@ crud.delete(
 For bulk operations, use the `TursoBatch` class:
 
 ```python
-from tursopy import TursoBatch
+from batch import TursoBatch
 
 batch = TursoBatch(connection)
 
@@ -140,7 +141,7 @@ batch.batch_insert("users", users)
 The `TursoAdvancedQueries` class handles complex operations:
 
 ```python
-from tursopy import TursoAdvancedQueries
+from advanced_queries import TursoAdvancedQueries
 
 advanced = TursoAdvancedQueries(connection)
 
@@ -159,7 +160,7 @@ result = advanced.join_query(
 The `TursoSchemaManager` helps with table operations:
 
 ```python
-from tursopy import TursoSchemaManager
+from schema_validator import TursoSchemaManager
 
 schema_manager = TursoSchemaManager(connection)
 
@@ -179,7 +180,7 @@ schema_manager.drop_table("old_table")
 ### Database Creation
 
 ```python
-from tursopy import TursoClient
+from crud import TursoClient
 
 client = TursoClient()
 
