@@ -162,9 +162,9 @@ result = advanced.join_query(
 The `TursoSchemaManager` helps with table operations:
 
 ```python
-from turso_python.schema_validator import SchemaValidator
+from turso_python.crud import TursoSchemaManager
 
-schema_manager = SchemaValidator(connection)
+schema_manager = TursoSchemaManager(connection)
 
 # Create a new table
 schema = {
