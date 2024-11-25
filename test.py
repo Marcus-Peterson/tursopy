@@ -1,5 +1,5 @@
 import unittest
-from crud import TursoSchemaManager,TursoCRUD, TursoDataManager, TursoClient  # Adjust import as per your structure
+from turso_python.crud import TursoSchemaManager,TursoCRUD, TursoDataManager, TursoClient  # Adjust import as per your structure
 import os
 from dotenv import load_dotenv
 import logging
@@ -79,11 +79,11 @@ def main_1():
     print("Drop Table Result:", result)
 
 
-from batch import TursoBatch
-from connection import TursoConnection
-from logger import TursoLogger
-from schema_validator import SchemaValidator
-from advanced_queries import TursoAdvancedQueries
+from turso_python.batch import TursoBatch
+from turso_python.connection import TursoConnection
+from turso_python.logger import TursoLogger
+from turso_python.schema_validator import SchemaValidator
+from turso_python.advanced_queries import TursoAdvancedQueries
 def main_2():
     # Create a connection to the database
     connection = TursoConnection()
