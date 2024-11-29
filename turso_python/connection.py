@@ -5,8 +5,8 @@ import requests
 load_dotenv()
 class TursoConnection:
     def __init__(self, database_url=None, auth_token=None):
-        self.database_url = database_url or os.environ.get("TURSO_DATABASE_URL")
-        self.auth_token = auth_token or os.environ.get("TURSO_AUTH_TOKEN")
+        self.database_url = database_url or os.getenv("TURSO_DATABASE_URL")
+        self.auth_token = auth_token or os.getenv("TURSO_AUTH_TOKEN")
         self.headers = {
             'Authorization': f'Bearer {self.auth_token}',
             'Content-Type': 'application/json'
