@@ -46,7 +46,7 @@ data = {"name": "John Doe", "age": 30}
 crud.create("users", data)
 
 # Read data
-result = crud.read("users", "name = ?", [{"type": "text", "value": "John Doe"}])
+result = crud.read("users", "name = ?", ["John Doe"])
 ```
 
 ## Detailed Usage Guide
@@ -94,7 +94,7 @@ all_users = crud.read("users")
 young_users = crud.read(
     table="users",
     where="age < ?",
-    args=[{"type": "integer", "value": "30"}]
+    args=["30"]
 )
 ```
 
@@ -106,7 +106,7 @@ crud.update(
     table="users",
     data=update_data,
     where="name = ?",
-    args=[{"type": "text", "value": "Jane Smith"}]
+    args=["Jane Smith"]
 )
 ```
 
@@ -116,7 +116,7 @@ crud.update(
 crud.delete(
     table="users",
     where="name = ?",
-    args=[{"type": "text", "value": "Jane Smith"}]
+    args=["Jane Smith"]
 )
 ```
 
