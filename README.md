@@ -1,5 +1,8 @@
 # TursoPy
 
+![Alt text](media/tursopy.png)
+
+
 A lightweight, dependency-minimal Python client for Turso databases. Born out of frustration with dependency issues in existing solutions, TursoPy provides a straightforward way to interact with Turso databases without the complexity.
 
 > **Note**: This project isn't meant to compete with libsql-experimental or suggest it's any better or worse. It's simply an alternative born from experiencing dependency issues with existing solutions. While TursoPy might not be as feature-rich as libsql-experimental, it gets the job done with minimal fuss. As a solo developer without corporate backing, I created this to solve my own frustrations and share it with others who might face similar challenges.
