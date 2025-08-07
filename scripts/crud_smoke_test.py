@@ -5,7 +5,6 @@ This script avoids printing secrets and uses environment variables for credentia
 """
 import os
 import sys
-import time
 import uuid
 from pathlib import Path
 
@@ -14,7 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from turso_python.connection import TursoConnection
+from turso_python.connection import TursoConnection  # noqa: E402
 
 
 def _extract_rows(resp):
@@ -88,7 +87,7 @@ def main() -> int:
             if isinstance(first_row, dict) and "values" in first_row:
                 cells = first_row["values"]
                 new_age = _cell_value(cells[0]) if cells else "?"
-            elif isinstance(first_row, (list, tuple)):
+            elif isinstance(first_row, list | tuple):
                 new_age = _cell_value(first_row[0]) if first_row else "?"
             else:
                 new_age = str(first_row)
@@ -112,7 +111,7 @@ def main() -> int:
             if isinstance(first_row, dict) and "values" in first_row:
                 cells = first_row["values"]
                 remaining = _cell_value(cells[0]) if cells else "?"
-            elif isinstance(first_row, (list, tuple)):
+            elif isinstance(first_row, list | tuple):
                 remaining = _cell_value(first_row[0]) if first_row else "?"
             else:
                 remaining = str(first_row)

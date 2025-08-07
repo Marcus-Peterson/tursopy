@@ -1,7 +1,7 @@
-import unittest
-from turso_python.crud import TursoSchemaManager, TursoCRUD, TursoDataManager, TursoClient
-import os
 import logging
+
+from turso_python.crud import TursoClient, TursoCRUD, TursoDataManager, TursoSchemaManager
+
 
 def main_1():
     # Initialize TursoClient and managers
@@ -77,18 +77,19 @@ def main_1():
     print("Drop Table Result:", result)
 
 
-from turso_python.batch import TursoBatch
-from turso_python.connection import TursoConnection
-from turso_python.logger import TursoLogger
-from turso_python.schema_validator import SchemaValidator
-from turso_python.advanced_queries import TursoAdvancedQueries
+from turso_python.advanced_queries import TursoAdvancedQueries  # noqa: E402
+from turso_python.batch import TursoBatch  # noqa: E402
+from turso_python.connection import TursoConnection  # noqa: E402
+from turso_python.schema_validator import SchemaValidator  # noqa: E402
+
+
 def main_2():
     # Create a connection to the database
     connection = TursoConnection()
 
     # Create instances of the classes
     turso_batch = TursoBatch(connection)
-    turso_logger = TursoLogger()
+    # turso_logger used only for logging examples; remove to satisfy linter
     schema_validator = SchemaValidator()
     turso_advanced_queries = TursoAdvancedQueries(connection)
 

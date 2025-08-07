@@ -13,8 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import anyio
-from turso_python.async_connection import AsyncTursoConnection
+import anyio  # noqa: E402
+
+from turso_python.async_connection import AsyncTursoConnection  # noqa: E402
 
 
 def _extract_rows(resp):
@@ -87,7 +88,7 @@ async def run() -> int:
                 if isinstance(first_row, dict) and "values" in first_row:
                     cells = first_row["values"]
                     new_age = _cell_value(cells[0]) if cells else "?"
-                elif isinstance(first_row, (list, tuple)):
+                elif isinstance(first_row, list | tuple):
                     new_age = _cell_value(first_row[0]) if first_row else "?"
                 else:
                     new_age = str(first_row)
@@ -111,7 +112,7 @@ async def run() -> int:
                 if isinstance(first_row, dict) and "values" in first_row:
                     cells = first_row["values"]
                     remaining = _cell_value(cells[0]) if cells else "?"
-                elif isinstance(first_row, (list, tuple)):
+                elif isinstance(first_row, list | tuple):
                     remaining = _cell_value(first_row[0]) if first_row else "?"
                 else:
                     remaining = str(first_row)

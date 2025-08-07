@@ -1,14 +1,14 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Result:
-    def __init__(self, payload: Dict[str, Any]):
+    def __init__(self, payload: dict[str, Any]):
         self._payload = payload or {}
 
-    def raw(self) -> Dict[str, Any]:
+    def raw(self) -> dict[str, Any]:
         return self._payload
 
-    def rows(self) -> List[Any]:
+    def rows(self) -> list[Any]:
         try:
             return (
                 self._payload.get("results", [])[0]
@@ -19,7 +19,7 @@ class Result:
         except Exception:
             return []
 
-    def first_value(self, default: Optional[Any] = None) -> Any:
+    def first_value(self, default: Any | None = None) -> Any:
         rows = self.rows()
         if not rows:
             return default
@@ -32,7 +32,7 @@ class Result:
             if isinstance(c0, dict):
                 return c0.get("value", default)
             return c0
-        if isinstance(r0, (list, tuple)):
+        if isinstance(r0, list | tuple):
             return r0[0] if r0 else default
         return r0 or default
 

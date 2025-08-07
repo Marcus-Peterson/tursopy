@@ -1,18 +1,18 @@
 # Package exports
 from .advanced_queries import TursoAdvancedQueries
 from .batch import TursoBatch
+from .connection import TursoConnection
 from .crud import (
     TursoClient,
-    TursoSchemaManager,
-    TursoDataManager,
     TursoCRUD,
+    TursoDataManager,
+    TursoSchemaManager,
 )
-from .schema_validator import SchemaValidator
-from .logger import TursoLogger
-from .turso_vector import TursoVector
-from .connection import TursoConnection
 from .exceptions import TursoError, TursoHTTPError, TursoRateLimitError
+from .logger import TursoLogger
 from .result import Result
+from .schema_validator import SchemaValidator
+from .turso_vector import TursoVector
 
 # Optional async exports; do not hard-fail if aiohttp is not installed yet
 try:
@@ -35,6 +35,11 @@ __all__ = [
     "TursoLogger",
     "TursoVector",
     "TursoConnection",
+    # Exceptions and result types
+    "TursoError",
+    "TursoHTTPError",
+    "TursoRateLimitError",
+    "Result",
 ]
 if _ASYNC_AVAILABLE:
     __all__ += [
