@@ -11,6 +11,8 @@ from .schema_validator import SchemaValidator
 from .logger import TursoLogger
 from .turso_vector import TursoVector
 from .connection import TursoConnection
+from .exceptions import TursoError, TursoHTTPError, TursoRateLimitError
+from .result import Result
 
 # Optional async exports; do not hard-fail if aiohttp is not installed yet
 try:

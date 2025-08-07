@@ -7,10 +7,13 @@ import os
 import requests
 from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Union
+import random
+import time
+from .exceptions import TursoHTTPError, TursoRateLimitError
 
 
 def _normalize_url(url: str) -> str:
-    """Convert libsql:// to https://, strip trailing pipeline suffix, and validate."""
+    """Convert libsql:// to https://, strip trailing pipeline suffix, and validate. Enforce https."""
     if url.startswith('libsql://'):
         url = 'https://' + url[len('libsql://'):]
     # Remove any existing /v2/pipeline suffix and trailing slash
@@ -18,6 +21,8 @@ def _normalize_url(url: str) -> str:
     parsed = urlparse(url)
     if not parsed.scheme or not parsed.netloc:
         raise ValueError(f"Invalid database URL: {url}")
+    if parsed.scheme != 'https':
+        raise ValueError("Only https scheme is supported after normalization")
     return url
 
 
@@ -28,6 +33,9 @@ class TursoConnection:
         auth_token: Optional[str] = None,
         *,
         timeout: int = 30,
+        retries: int = 0,
+        backoff_base: float = 0.2,
+        debug_sql: bool = False,
     ):
         env_url = os.getenv("TURSO_DATABASE_URL")
         env_token = os.getenv("TURSO_AUTH_TOKEN")
@@ -45,6 +53,9 @@ class TursoConnection:
         )  # type: ignore[arg-type]
         self.auth_token = auth_token or env_token  # type: ignore[assignment]
         self.timeout = timeout
+        self.retries = max(0, int(retries))
+        self.backoff_base = float(backoff_base)
+        self.debug_sql = bool(debug_sql)
         self.headers = {
             'Authorization': f'Bearer {self.auth_token}',
             'Content-Type': 'application/json',
@@ -65,16 +76,23 @@ class TursoConnection:
                 {'type': 'close'},
             ]
         }
-        try:
-            response = self.session.post(
-                f'{self.database_url}/v2/pipeline',
-                json=payload,
-                headers=self.headers,
-                timeout=self.timeout,
-            )
-            return self._handle_response(response)
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"Request failed: {str(e)}")
+        attempt = 0
+        while True:
+            try:
+                response = self.session.post(
+                    f'{self.database_url}/v2/pipeline',
+                    json=payload,
+                    headers=self.headers,
+                    timeout=self.timeout,
+                )
+                return self._handle_response(response)
+            except requests.exceptions.RequestException as e:
+                if attempt >= self.retries:
+                    raise TursoHTTPError(-1, f"Request failed: {str(e)}")
+            # backoff with jitter
+            delay = self.backoff_base * (2 ** attempt) + random.uniform(0, self.backoff_base)
+            time.sleep(delay)
+            attempt += 1
 
     def batch(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Execute multiple SQL statements in a single transaction.
@@ -94,16 +112,22 @@ class TursoConnection:
                 }
             )
         reqs.append({'type': 'close'})
-        try:
-            response = self.session.post(
-                f'{self.database_url}/v2/pipeline',
-                json={'requests': reqs},
-                headers=self.headers,
-                timeout=self.timeout,
-            )
-            return self._handle_response(response)
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"Batch request failed: {str(e)}")
+        attempt = 0
+        while True:
+            try:
+                response = self.session.post(
+                    f'{self.database_url}/v2/pipeline',
+                    json={'requests': reqs},
+                    headers=self.headers,
+                    timeout=self.timeout,
+                )
+                return self._handle_response(response)
+            except requests.exceptions.RequestException as e:
+                if attempt >= self.retries:
+                    raise TursoHTTPError(-1, f"Batch request failed: {str(e)}")
+            delay = self.backoff_base * (2 ** attempt) + random.uniform(0, self.backoff_base)
+            time.sleep(delay)
+            attempt += 1
 
     def execute_pipeline(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Execute a series of SQL statements (pre-built request objects)."""
@@ -121,12 +145,21 @@ class TursoConnection:
         """Process API response and handle errors."""
         if response.status_code == 200:
             return response.json()
+        retry_after = None
+        if response.status_code == 429:
+            retry_after_hdr = response.headers.get('Retry-After')
+            try:
+                retry_after = float(retry_after_hdr) if retry_after_hdr else None
+            except ValueError:
+                retry_after = None
         try:
             error_data = response.json()
             error_msg = error_data.get('error', response.text)
         except ValueError:
             error_msg = response.text
-        raise RuntimeError(f"Turso API Error {response.status_code}: {error_msg}")
+        if response.status_code == 429:
+            raise TursoRateLimitError(response.status_code, error_msg, retry_after)
+        raise TursoHTTPError(response.status_code, error_msg)
 
     @staticmethod
     def _format_args(args: Optional[Union[List[Any], tuple]]) -> List[Dict[str, Any]]:
@@ -154,6 +187,17 @@ class TursoConnection:
             self.session.close()
         except Exception:
             pass
+
+    # Context manager support for symmetry with async
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            self.session.close()
+        except Exception:
+            pass
+        return False
 
 # # Example usage
 # if __name__ == "__main__":

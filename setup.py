@@ -14,7 +14,11 @@ setup(
         'requests',
         'aiohttp',
         'anyio',
-        'jsonschema',
+'jsonschema',
+        'pytest',
+        'pytest-asyncio',
+        'requests-mock',
+'aioresponses',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

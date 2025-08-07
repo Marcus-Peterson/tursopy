@@ -6,6 +6,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional
 import aiohttp
+import random
+from .exceptions import TursoHTTPError, TursoRateLimitError
 
 
 def _normalize_database_url(url: str) -> str:
@@ -22,7 +24,9 @@ class AsyncTursoConnection:
         *,
         timeout: int = 30,
         session: Optional[aiohttp.ClientSession] = None,
-    ) -> None:
+        retries: int = 0,
+        backoff_base: float = 0.2,
+) -> None:
         env_url = os.getenv("TURSO_DATABASE_URL")
         env_token = os.getenv("TURSO_AUTH_TOKEN")
         if not (database_url or env_url):
@@ -32,13 +36,16 @@ class AsyncTursoConnection:
 
         self.database_url = _normalize_database_url(database_url or env_url)  # type: ignore[arg-type]
         self.auth_token = auth_token or env_token  # type: ignore[assignment]
-        self._timeout = aiohttp.ClientTimeout(total=timeout)
+        # More precise timeouts by phase
+        self._timeout = aiohttp.ClientTimeout(total=None, connect=timeout, sock_connect=timeout, sock_read=timeout)
         self._external_session = session is not None
         self._session = session
         self._headers = {
             "Authorization": f"Bearer {self.auth_token}",
             "Content-Type": "application/json",
         }
+        self._retries = max(0, int(retries))
+        self._backoff_base = float(backoff_base)
 
     async def __aenter__(self) -> "AsyncTursoConnection":
         if self._session is None:
@@ -70,23 +77,62 @@ class AsyncTursoConnection:
                 {"type": "close"},
             ]
         }
-        async with self.session.post(
-            f"{self.database_url}/v2/pipeline", json=payload, headers=self._headers
-        ) as resp:
-            if resp.status == 200:
-                return await resp.json()
-            text = await resp.text()
-            raise RuntimeError(f"Turso API Error {resp.status}: {text}")
+        attempt = 0
+        while True:
+            try:
+                async with self.session.post(
+                    f"{self.database_url}/v2/pipeline", json=payload, headers=self._headers
+                ) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    retry_after = None
+                    if resp.status == 429:
+                        ra = resp.headers.get('Retry-After')
+                        try:
+                            retry_after = float(ra) if ra else None
+                        except Exception:
+                            retry_after = None
+                    text = await resp.text()
+                    if resp.status == 429:
+                        raise TursoRateLimitError(resp.status, text, retry_after)
+                    raise TursoHTTPError(resp.status, text)
+            except (aiohttp.ClientError, TursoHTTPError) as e:
+                if attempt >= self._retries:
+                    raise
+            # backoff with jitter
+            delay = self._backoff_base * (2 ** attempt) + random.uniform(0, self._backoff_base)
+            import anyio
+            await anyio.sleep(delay)
+            attempt += 1
 
     async def execute_pipeline(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
         payload = {"requests": queries + [{"type": "close"}]}
-        async with self.session.post(
-            f"{self.database_url}/v2/pipeline", json=payload, headers=self._headers
-        ) as resp:
-            if resp.status == 200:
-                return await resp.json()
-            text = await resp.text()
-            raise RuntimeError(f"Turso API Error {resp.status}: {text}")
+        attempt = 0
+        while True:
+            try:
+                async with self.session.post(
+                    f"{self.database_url}/v2/pipeline", json=payload, headers=self._headers
+                ) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    retry_after = None
+                    if resp.status == 429:
+                        ra = resp.headers.get('Retry-After')
+                        try:
+                            retry_after = float(ra) if ra else None
+                        except Exception:
+                            retry_after = None
+                    text = await resp.text()
+                    if resp.status == 429:
+                        raise TursoRateLimitError(resp.status, text, retry_after)
+                    raise TursoHTTPError(resp.status, text)
+            except (aiohttp.ClientError, TursoHTTPError) as e:
+                if attempt >= self._retries:
+                    raise
+            import anyio
+            delay = self._backoff_base * (2 ** attempt) + random.uniform(0, self._backoff_base)
+            await anyio.sleep(delay)
+            attempt += 1
 
     @staticmethod
     def _format_args(args: List[Any]) -> List[Dict[str, str]]:
