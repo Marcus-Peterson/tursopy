@@ -1,8 +1,2 @@
-jsonschema
-requests
-aiohttp
-anyio
-pytest
-pytest-asyncio
-requests-mock
-aioresponses
+# This project uses uv for dependency management.
+# See pyproject.toml for dependencies and dev extras.

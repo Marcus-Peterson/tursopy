@@ -1,0 +1,51 @@
+[project]
+name = "tursopy"
+version = "0.1.0"
+description = "A Python client for Turso/libsql HTTP API with sync and async support"
+authors = [
+  { name = "Marcus Peterson", email = "marcus.peterson.tech@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+keywords = ["turso", "libsql", "sqlite", "http", "client", "async", "aiohttp"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+]
+
+# Runtime (production) dependencies only
+# Keep minimal: requests for sync, aiohttp+anyio for async, jsonschema for schema validator
+dependencies = [
+  "requests",
+  "aiohttp",
+  "anyio",
+  "jsonschema",
+]
+
+[project.optional-dependencies]
+# Developer tooling and test deps
+# Install via: uv pip install -e .[dev]
+# or with uv sync if using uv-managed virtualenv
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "requests-mock",
+  "aioresponses",
+  "ruff",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
+

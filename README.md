@@ -19,6 +19,12 @@ A lightweight, dependency-minimal Python client for Turso databases. Born out of
 ## Installation
 ```
 pip install turso-python
+
+Using uv (recommended for local dev):
+- Production deps only:
+  uv pip install -e .
+- With dev extras (tests, linting):
+  uv pip install -e .[dev]
 ```
 If pip install doesn't work, clone the project or download the zip from the realease section
 
