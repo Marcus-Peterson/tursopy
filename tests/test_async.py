@@ -1,7 +1,6 @@
 import pytest
-import anyio
-from aiohttp import ClientResponse
 from aioresponses import aioresponses
+
 from turso_python.async_connection import AsyncTursoConnection
 from turso_python.exceptions import TursoHTTPError
 

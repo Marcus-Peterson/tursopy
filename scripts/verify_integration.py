@@ -42,8 +42,8 @@ def run_sync() -> bool:
 def run_async() -> bool:
     try:
         import anyio
+
         from turso_python.async_connection import AsyncTursoConnection
-        from turso_python.async_crud import AsyncTursoCRUD  # exercise CRUD import too
     except Exception as e:
         print(f"ASYNC_IMPORT_ERROR:{e}")
         return False

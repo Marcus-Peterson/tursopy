@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional
-import aiohttp
 import random
+from typing import Any
+
+import aiohttp
+
 from .exceptions import TursoHTTPError, TursoRateLimitError
 
 
@@ -19,11 +21,11 @@ def _normalize_database_url(url: str) -> str:
 class AsyncTursoConnection:
     def __init__(
         self,
-        database_url: Optional[str] = None,
-        auth_token: Optional[str] = None,
+        database_url: str | None = None,
+        auth_token: str | None = None,
         *,
         timeout: int = 30,
-        session: Optional[aiohttp.ClientSession] = None,
+        session: aiohttp.ClientSession | None = None,
         retries: int = 0,
         backoff_base: float = 0.2,
 ) -> None:
@@ -47,7 +49,7 @@ class AsyncTursoConnection:
         self._retries = max(0, int(retries))
         self._backoff_base = float(backoff_base)
 
-    async def __aenter__(self) -> "AsyncTursoConnection":
+    async def __aenter__(self) -> AsyncTursoConnection:
         if self._session is None:
             self._session = aiohttp.ClientSession(timeout=self._timeout)
         return self
@@ -64,7 +66,7 @@ class AsyncTursoConnection:
             self._session = aiohttp.ClientSession(timeout=self._timeout)
         return self._session
 
-    async def execute_query(self, sql: str, args: Optional[List[Any]] = None) -> Dict[str, Any]:
+    async def execute_query(self, sql: str, args: list[Any] | None = None) -> dict[str, Any]:
         payload = {
             "requests": [
                 {
@@ -96,7 +98,7 @@ class AsyncTursoConnection:
                     if resp.status == 429:
                         raise TursoRateLimitError(resp.status, text, retry_after)
                     raise TursoHTTPError(resp.status, text)
-            except (aiohttp.ClientError, TursoHTTPError) as e:
+            except (aiohttp.ClientError, TursoHTTPError):
                 if attempt >= self._retries:
                     raise
             # backoff with jitter
@@ -105,7 +107,7 @@ class AsyncTursoConnection:
             await anyio.sleep(delay)
             attempt += 1
 
-    async def execute_pipeline(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def execute_pipeline(self, queries: list[dict[str, Any]]) -> dict[str, Any]:
         payload = {"requests": queries + [{"type": "close"}]}
         attempt = 0
         while True:
@@ -126,7 +128,7 @@ class AsyncTursoConnection:
                     if resp.status == 429:
                         raise TursoRateLimitError(resp.status, text, retry_after)
                     raise TursoHTTPError(resp.status, text)
-            except (aiohttp.ClientError, TursoHTTPError) as e:
+            except (aiohttp.ClientError, TursoHTTPError):
                 if attempt >= self._retries:
                     raise
             import anyio
@@ -135,8 +137,8 @@ class AsyncTursoConnection:
             attempt += 1
 
     @staticmethod
-    def _format_args(args: List[Any]) -> List[Dict[str, str]]:
-        formatted: List[Dict[str, str]] = []
+    def _format_args(args: list[Any]) -> list[dict[str, str]]:
+        formatted: list[dict[str, str]] = []
         for a in args:
             if a is None:
                 formatted.append({"type": "null", "value": "null"})

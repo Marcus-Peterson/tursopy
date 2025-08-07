@@ -1,8 +1,6 @@
-import json
-import types
-import requests
-import requests_mock
 import pytest
+import requests_mock
+
 from turso_python.connection import TursoConnection
 from turso_python.exceptions import TursoHTTPError
 

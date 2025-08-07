@@ -1,5 +1,7 @@
 #Handles batch operations.
 from turso_python.crud import TursoCRUD
+
+
 class TursoBatch:
     def __init__(self, connection):
         self.connection = connection

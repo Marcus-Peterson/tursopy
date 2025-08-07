@@ -2,10 +2,10 @@
 # New asynchronous equivalents are provided in async_connection.py and async_crud.py
 # This module intentionally does not use python-dotenv.
 
-import os
-import requests
 import json
-from typing import Any, Dict, List, Optional
+import os
+
+import requests
 
 
 def _normalize_database_url(url: str) -> str:
@@ -14,7 +14,7 @@ def _normalize_database_url(url: str) -> str:
     return url
 
 class TursoClient:
-    def __init__(self, database_url: Optional[str] = None, auth_token: Optional[str] = None, *, timeout: int = 30):
+    def __init__(self, database_url: str | None = None, auth_token: str | None = None, *, timeout: int = 30):
         env_url = os.getenv("TURSO_DATABASE_URL")
         env_token = os.getenv("TURSO_AUTH_TOKEN")
         if not (database_url or env_url):

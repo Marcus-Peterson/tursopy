@@ -4,11 +4,13 @@
 # environment variables or pass them explicitly.
 
 import os
-import requests
-from urllib.parse import urlparse
-from typing import Any, Dict, List, Optional, Union
 import random
 import time
+from typing import Any
+from urllib.parse import urlparse
+
+import requests
+
 from .exceptions import TursoHTTPError, TursoRateLimitError
 
 
@@ -29,8 +31,8 @@ def _normalize_url(url: str) -> str:
 class TursoConnection:
     def __init__(
         self,
-        database_url: Optional[str] = None,
-        auth_token: Optional[str] = None,
+        database_url: str | None = None,
+        auth_token: str | None = None,
         *,
         timeout: int = 30,
         retries: int = 0,
@@ -64,8 +66,8 @@ class TursoConnection:
         self.session = requests.Session()
 
     def execute_query(
-        self, sql: str, args: Optional[Union[List[Any], tuple]] = None
-    ) -> Dict[str, Any]:
+        self, sql: str, args: list[Any] | tuple | None = None
+    ) -> dict[str, Any]:
         """Execute a single SQL statement with optional positional arguments."""
         payload = {
             'requests': [
@@ -94,13 +96,13 @@ class TursoConnection:
             time.sleep(delay)
             attempt += 1
 
-    def batch(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def batch(self, queries: list[dict[str, Any]]) -> dict[str, Any]:
         """Execute multiple SQL statements in a single transaction.
 
         Args:
             queries: List of dicts with 'sql' and optional 'args'.
         """
-        reqs: List[Dict[str, Any]] = []
+        reqs: list[dict[str, Any]] = []
         for q in queries:
             reqs.append(
                 {
@@ -129,7 +131,7 @@ class TursoConnection:
             time.sleep(delay)
             attempt += 1
 
-    def execute_pipeline(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def execute_pipeline(self, queries: list[dict[str, Any]]) -> dict[str, Any]:
         """Execute a series of SQL statements (pre-built request objects)."""
         payload = {'requests': queries + [{'type': 'close'}]}
         response = self.session.post(
@@ -141,7 +143,7 @@ class TursoConnection:
         return self._handle_response(response)
 
     @staticmethod
-    def _handle_response(response: requests.Response) -> Dict[str, Any]:
+    def _handle_response(response: requests.Response) -> dict[str, Any]:
         """Process API response and handle errors."""
         if response.status_code == 200:
             return response.json()
@@ -162,10 +164,10 @@ class TursoConnection:
         raise TursoHTTPError(response.status_code, error_msg)
 
     @staticmethod
-    def _format_args(args: Optional[Union[List[Any], tuple]]) -> List[Dict[str, Any]]:
+    def _format_args(args: list[Any] | tuple | None) -> list[dict[str, Any]]:
         if not args:
             return []
-        formatted: List[Dict[str, Any]] = []
+        formatted: list[dict[str, Any]] = []
         for a in args:
             if isinstance(a, str):
                 formatted.append({"type": "text", "value": a})

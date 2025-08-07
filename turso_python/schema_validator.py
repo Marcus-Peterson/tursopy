@@ -1,5 +1,6 @@
 #Validates input schemas
-from jsonschema import validate, ValidationError
+from jsonschema import ValidationError, validate
+
 
 class SchemaValidator:
     @staticmethod
