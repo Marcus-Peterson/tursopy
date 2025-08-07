@@ -12,7 +12,7 @@ A lightweight, dependency-minimal Python client for Turso databases. Born out of
 - Simple CRUD operations
 - Batch processing support
 - Advanced query capabilities including JOINs
-- Minimal dependencies (just `requests` and `python-dotenv`)
+- Minimal dependencies (HTTP client via `requests` for sync and `aiohttp` for async)
 - Straightforward error handling
 - Database creation utilities
 
@@ -24,14 +24,17 @@ If pip install doesn't work, clone the project or download the zip from the real
 
 ## Quick Start
 
-1. Set up your environment variables:
+1. Set up your environment variables (or pass explicitly to the client). Do not commit secrets.
 
-```env
-TURSO_DATABASE_URL="https://your_database_url"
-TURSO_AUTH_TOKEN="your_auth_token"
-```
-When you use the turso dashboard to generate urls and auth token, the url will be libsql: change that to https:
-> libsql://database-organisation.turso.io --> https://database-organisation.turso.io
+- On Linux/macOS:
+  export TURSO_DATABASE_URL="libsql://your_database_url"
+  export TURSO_AUTH_TOKEN={{TURSO_AUTH_TOKEN}}
+
+- On Windows (PowerShell):
+  setx TURSO_DATABASE_URL "libsql://your_database_url"
+  setx TURSO_AUTH_TOKEN "{{TURSO_AUTH_TOKEN}}"
+
+Note: The client accepts libsql:// and normalizes it to https:// automatically for HTTP calls.
 
 
 2. Basic usage:
@@ -40,7 +43,7 @@ When you use the turso dashboard to generate urls and auth token, the url will b
 from turso_python.connection import TursoConnection
 from turso_python.crud import TursoCRUD
 
-# Initialize connection
+# Initialize connection (env vars or pass explicit values)
 connection = TursoConnection()
 crud = TursoCRUD(connection)
 
@@ -121,6 +124,22 @@ crud.delete(
     where="name = ?",
     args=["Jane Smith"]
 )
+```
+
+### Async Usage
+
+```python
+import anyio
+from turso_python import AsyncTursoConnection, AsyncTursoCRUD
+
+async def main():
+    async with AsyncTursoConnection() as conn:
+        crud = AsyncTursoCRUD(conn)
+        await crud.create("users", {"name": "Alice", "age": 30})
+        res = await crud.read("users", "age > ?", [20])
+        print(res)
+
+anyio.run(main)
 ```
 
 ### Batch Operations

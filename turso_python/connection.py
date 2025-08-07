@@ -1,154 +1,165 @@
+# Handles Turso API communication (synchronous version).
+# Note: For new development, prefer the asynchronous client in async_connection.py
+# This module intentionally does not use python-dotenv. Provide credentials via
+# environment variables or pass them explicitly.
+
 import os
-from dotenv import load_dotenv
 import requests
 from urllib.parse import urlparse
-from typing import Optional, Union, List, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
-load_dotenv()
 
-class TursoClient:
-    def __init__(self, database_url: Optional[str] = None, auth_token: Optional[str] = None):
-        """
-        Initialize connection to Turso database.
-        
-        Args:
-            database_url: Either libsql:// or https:// URL (will be normalized)
-            auth_token: Turso authentication token
-        """
-        self.database_url = self._normalize_url(database_url or os.getenv("TURSO_DATABASE_URL"))
-        self.auth_token = auth_token or os.getenv("TURSO_AUTH_TOKEN")
+def _normalize_url(url: str) -> str:
+    """Convert libsql:// to https://, strip trailing pipeline suffix, and validate."""
+    if url.startswith('libsql://'):
+        url = 'https://' + url[len('libsql://'):]
+    # Remove any existing /v2/pipeline suffix and trailing slash
+    url = url.rstrip('/').replace('/v2/pipeline', '')
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ValueError(f"Invalid database URL: {url}")
+    return url
+
+
+class TursoConnection:
+    def __init__(
+        self,
+        database_url: Optional[str] = None,
+        auth_token: Optional[str] = None,
+        *,
+        timeout: int = 30,
+    ):
+        env_url = os.getenv("TURSO_DATABASE_URL")
+        env_token = os.getenv("TURSO_AUTH_TOKEN")
+        if not (database_url or env_url):
+            raise ValueError(
+                "database_url not provided and TURSO_DATABASE_URL is not set"
+            )
+        if not (auth_token or env_token):
+            raise ValueError(
+                "auth_token not provided and TURSO_AUTH_TOKEN is not set"
+            )
+
+        self.database_url = _normalize_url(
+            database_url or env_url
+        )  # type: ignore[arg-type]
+        self.auth_token = auth_token or env_token  # type: ignore[assignment]
+        self.timeout = timeout
         self.headers = {
             'Authorization': f'Bearer {self.auth_token}',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         }
+        # Use a persistent session for connection reuse and performance
         self.session = requests.Session()
 
-    def _normalize_url(self, url: str) -> str:
-        """Convert libsql:// to https:// and validate URL format."""
-        if url.startswith('libsql://'):
-            url = 'https://' + url[len('libsql://'):]
-        
-        # Remove any existing /v2/pipeline suffix
-        url = url.rstrip('/').replace('/v2/pipeline', '')
-        
-        # Validate URL structure
-        parsed = urlparse(url)
-        if not parsed.scheme or not parsed.netloc:
-            raise ValueError(f"Invalid database URL: {url}")
-            
-        return url
-
-    def _format_args(self, args: Union[List[Any], tuple, None]) -> List[Dict[str, Any]]:
-        """Convert Python values to Turso API value format."""
-        if not args:
-            return []
-        
-        formatted = []
-        for arg in args:
-            if isinstance(arg, str):
-                formatted.append({"type": "text", "value": arg})
-            elif isinstance(arg, int):
-                formatted.append({"type": "integer", "value": str(arg)})
-            elif isinstance(arg, float):
-                formatted.append({"type": "float", "value": str(arg)})
-            elif arg is None:
-                formatted.append({"type": "null"})
-            elif isinstance(arg, bool):
-                formatted.append({"type": "integer", "value": "1" if arg else "0"})
-            else:
-                raise ValueError(f"Unsupported argument type: {type(arg)}")
-        return formatted
-
-    def execute(self, sql: str, args: Optional[Union[List[Any], tuple]] = None) -> Dict[str, Any]:
-        """
-        Execute a single SQL statement.
-        
-        Args:
-            sql: SQL query with ? placeholders
-            args: Parameters for the query
-            
-        Returns:
-            Response from Turso API
-        """
+    def execute_query(
+        self, sql: str, args: Optional[Union[List[Any], tuple]] = None
+    ) -> Dict[str, Any]:
+        """Execute a single SQL statement with optional positional arguments."""
         payload = {
             'requests': [
                 {
                     'type': 'execute',
-                    'stmt': {
-                        'sql': sql,
-                        'args': self._format_args(args)
-                    }
+                    'stmt': {'sql': sql, 'args': self._format_args(args)},
                 },
-                {'type': 'close'}
+                {'type': 'close'},
             ]
         }
-        
         try:
             response = self.session.post(
                 f'{self.database_url}/v2/pipeline',
                 json=payload,
                 headers=self.headers,
-                timeout=10
+                timeout=self.timeout,
             )
             return self._handle_response(response)
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Request failed: {str(e)}")
 
     def batch(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Execute multiple SQL statements in a single transaction.
-        
+        """Execute multiple SQL statements in a single transaction.
+
         Args:
-            queries: List of dicts with 'sql' and 'args' keys
-            
-        Returns:
-            Response from Turso API
+            queries: List of dicts with 'sql' and optional 'args'.
         """
-        requests = []
-        for query in queries:
-            requests.append({
-                'type': 'execute',
-                'stmt': {
-                    'sql': query['sql'],
-                    'args': self._format_args(query.get('args'))
+        reqs: List[Dict[str, Any]] = []
+        for q in queries:
+            reqs.append(
+                {
+                    'type': 'execute',
+                    'stmt': {
+                        'sql': q['sql'],
+                        'args': self._format_args(q.get('args')),
+                    },
                 }
-            })
-        requests.append({'type': 'close'})
-        
+            )
+        reqs.append({'type': 'close'})
         try:
             response = self.session.post(
                 f'{self.database_url}/v2/pipeline',
-                json={'requests': requests},
+                json={'requests': reqs},
                 headers=self.headers,
-                timeout=15
+                timeout=self.timeout,
             )
             return self._handle_response(response)
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Batch request failed: {str(e)}")
+
+    def execute_pipeline(self, queries: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Execute a series of SQL statements (pre-built request objects)."""
+        payload = {'requests': queries + [{'type': 'close'}]}
+        response = self.session.post(
+            f'{self.database_url}/v2/pipeline',
+            json=payload,
+            headers=self.headers,
+            timeout=self.timeout,
+        )
+        return self._handle_response(response)
 
     @staticmethod
     def _handle_response(response: requests.Response) -> Dict[str, Any]:
         """Process API response and handle errors."""
         if response.status_code == 200:
             return response.json()
-        
         try:
             error_data = response.json()
             error_msg = error_data.get('error', response.text)
         except ValueError:
             error_msg = response.text
-            
         raise RuntimeError(f"Turso API Error {response.status_code}: {error_msg}")
 
-    def close(self):
+    @staticmethod
+    def _format_args(args: Optional[Union[List[Any], tuple]]) -> List[Dict[str, Any]]:
+        if not args:
+            return []
+        formatted: List[Dict[str, Any]] = []
+        for a in args:
+            if isinstance(a, str):
+                formatted.append({"type": "text", "value": a})
+            elif isinstance(a, int):
+                formatted.append({"type": "integer", "value": str(a)})
+            elif isinstance(a, float):
+                formatted.append({"type": "float", "value": str(a)})
+            elif a is None:
+                formatted.append({"type": "null"})
+            elif isinstance(a, bool):
+                formatted.append({"type": "integer", "value": "1" if a else "0"})
+            else:
+                raise ValueError(f"Unsupported argument type: {type(a)}")
+        return formatted
+
+    def close(self) -> None:
         """Close the HTTP session."""
-        self.session.close()
+        try:
+            self.session.close()
+        except Exception:
+            pass
 
 # # Example usage
 # if __name__ == "__main__":
 #     # Initialize client (reads from .env by default)
 #     client = TursoClient()
-    
+#
 #     try:
 #         # Create table
 #         client.execute("""
@@ -157,21 +168,21 @@ class TursoClient:
 #                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 #             )
 #         """)
-        
+#
 #         # Insert a user
 #         result = client.execute(
 #             "INSERT INTO users (uid) VALUES (?)",
 #             ["01K1BH5PW17TWEE1RZV7H6WENF"]
 #         )
 #         print("Insert successful:", result)
-        
+#
 #         # Batch operations
 #         batch_result = client.batch([
 #             {"sql": "INSERT INTO users (uid) VALUES (?)", "args": ["USER001"]},
 #             {"sql": "INSERT INTO users (uid) VALUES (?)", "args": ["USER002"]}
 #         ])
 #         print("Batch execution successful:", batch_result)
-        
+#
 #     except Exception as e:
 #         print("Operation failed:", str(e))
 #     finally:

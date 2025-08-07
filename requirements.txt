@@ -1,3 +1,4 @@
 jsonschema
 requests
-python-dotenv
+aiohttp
+anyio

@@ -1,9 +1,7 @@
 import unittest
-from turso_python.crud import TursoSchemaManager,TursoCRUD, TursoDataManager, TursoClient  # Adjust import as per your structure
+from turso_python.crud import TursoSchemaManager, TursoCRUD, TursoDataManager, TursoClient
 import os
-from dotenv import load_dotenv
 import logging
-load_dotenv()
 
 def main_1():
     # Initialize TursoClient and managers
