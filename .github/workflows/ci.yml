@@ -37,6 +37,14 @@ jobs:
         run: |
           uv pip install -e .[dev]
 
+      - name: Build package (uv build)
+        run: |
+          uv build
+
+      - name: Validate package metadata (twine check)
+        run: |
+          uvx twine check dist/*
+
       - name: Lint (ruff)
         run: |
           uv run ruff check .

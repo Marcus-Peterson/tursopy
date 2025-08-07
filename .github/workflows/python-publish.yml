@@ -22,15 +22,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      - name: Build release distributions
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Build release distributions (sdist and wheel)
         run: |
-          # NOTE: put your own distribution build steps here.
-          python -m pip install build
-          python -m build
+          uv build
+
+      - name: Validate metadata (twine check)
+        run: |
+          uvx twine check dist/*
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
@@ -51,11 +57,11 @@ jobs:
     environment:
       name: pypi
       # OPTIONAL: uncomment and update to include your PyPI project URL in the deployment status:
-      # url: https://pypi.org/p/YOURPROJECT
+      # url: https://pypi.org/p/tursopy
       #
       # ALTERNATIVE: if your GitHub Release name is the PyPI project version string
       # ALTERNATIVE: exactly, uncomment the following line instead:
-      # url: https://pypi.org/project/YOURPROJECT/${{ github.event.release.name }}
+      # url: https://pypi.org/project/tursopy/${{ github.event.release.name }}
 
     steps:
       - name: Retrieve release distributions

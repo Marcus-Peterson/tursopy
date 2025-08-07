@@ -1,9 +1,12 @@
 [project]
 name = "tursopy"
-version = "0.1.0"
+version = "0.1.8"
 description = "A Python client for Turso/libsql HTTP API with sync and async support"
 authors = [
   { name = "Marcus Peterson", email = "marcus.peterson.tech@gmail.com" }
+]
+maintainers = [
+  { name = "Srikanth", email = "srikanth.gokr@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,8 +40,8 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
@@ -49,3 +52,14 @@ ignore = ["E501"]
 addopts = "-q"
 asyncio_mode = "auto"
 
+[tool.hatch.build.targets.wheel]
+packages = [
+  "turso_python"
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "turso_python",
+  "README.md",
+  "LICENSE",
+]

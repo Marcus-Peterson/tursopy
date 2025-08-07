@@ -1,25 +1,10 @@
-from setuptools import setup, find_packages
+# This project uses PEP 621 metadata in pyproject.toml and a PEP 517 build backend.
+# setup.py is intentionally unused. Building should be done via:
+#   uv build  (or)  python -m build
+# Installing for development:
+#   uv pip install -e .[dev]
 
-setup(
-    name='tursopy',
-    version='0.1.0',
-    author='Marcus Peterson',
-    author_email='marcus.peterson.tech@gmail.com',
-    description='A Python client for Turso API with CRUD and batch operations.',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    url='https://github.com/marcus-peterson/tursopy',
-    packages=find_packages(),
-    install_requires=[
-        'requests',
-        'aiohttp',
-        'anyio',
-'jsonschema',
-    ],
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: Apache 2.0 License',
-        'Operating System :: OS Independent',
-    ],
-    python_requires='>=3.6',
+raise SystemExit(
+    "This project does not use setup.py. Use pyproject.toml with hatchling: "
+    "build with 'uv build' or 'python -m build'."
 )
