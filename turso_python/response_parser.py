@@ -1,3 +1,4 @@
+
 from typing import Any, Dict, List, Optional
 
 class TursoResponseParser:
@@ -41,7 +42,7 @@ class TursoResponseParser:
                 parsed_rows.append(parsed_row)
             
             return parsed_rows
-            
+        
         except Exception:
             return []
     
@@ -68,7 +69,7 @@ class TursoResponseParser:
             cols = result.get('cols', [])
             
             return [col.get('name', '') for col in cols]
-            
+        
         except Exception:
             return []
     
@@ -84,6 +85,5 @@ class TursoResponseParser:
         return {
             'rows': rows,
             'columns': columns,
-            'count': len(rows),
-            'raw_response': response
+            'count': len(rows)
         }

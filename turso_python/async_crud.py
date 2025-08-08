@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Optional, List
 from contextlib import asynccontextmanager
 from .async_connection import AsyncTursoConnection
 from .response_parser import TursoResponseParser
@@ -29,30 +29,40 @@ class AsyncTursoCRUD:
             self.connection = None
     
     async def create(self, table: str, data: dict[str, Any]) -> dict[str, Any]:
+        """Create a new record in the table"""
         columns = ", ".join(data.keys())
         placeholders = ", ".join(["?" for _ in data])
         sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
         
         raw_result = await self.connection.execute_query(sql, list(data.values()))
-        normalized_result = TursoResponseParser.normalize_response(raw_result)
-        return normalized_result
+        return TursoResponseParser.normalize_response(raw_result)
     
     async def read(self, table: str,
                   where: Optional[str] = None,
                   args: Optional[list[Any]] = None,
                   columns: str = "*") -> dict[str, Any]:
+        """
+        Read records from the table
+        
+        Returns normalized format:
+        {
+            'rows': [['01K1B9YA0292ZYEVHQ1HGY6VWC'], ['01JT2S68ZRW0PRDT5TM67CWYJX']],
+            'columns': ['uid'],
+            'count': 2
+        }
+        """
         sql = f"SELECT {columns} FROM {table}"
         if where:
             sql += f" WHERE {where}"
         
         raw_result = await self.connection.execute_query(sql, args or [])
-        normalized_result = TursoResponseParser.normalize_response(raw_result)
-        return normalized_result
+        return TursoResponseParser.normalize_response(raw_result)
     
     async def update(self, table: str,
                     data: dict[str, Any],
                     where: str,
                     where_args: list[Any]) -> dict[str, Any]:
+        """Update records in the table"""
         set_clause = ", ".join([f"{k} = ?" for k in data])
         sql = f"UPDATE {table} SET {set_clause} WHERE {where}"
         
@@ -60,14 +70,30 @@ class AsyncTursoCRUD:
             sql, 
             list(data.values()) + where_args
         )
-        normalized_result = TursoResponseParser.normalize_response(raw_result)
-        return normalized_result
+        return TursoResponseParser.normalize_response(raw_result)
     
     async def delete(self, table: str, where: str, args: list[Any]) -> dict[str, Any]:
+        """Delete records from the table"""
         sql = f"DELETE FROM {table} WHERE {where}"
         raw_result = await self.connection.execute_query(sql, args)
-        normalized_result = TursoResponseParser.normalize_response(raw_result)
-        return normalized_result
+        return TursoResponseParser.normalize_response(raw_result)
+    
+    # Convenience methods for easier data access
+    async def read_all_rows(self, table: str, **kwargs) -> List[List[Any]]:
+        """Get just the rows data directly"""
+        result = await self.read(table, **kwargs)
+        return result['rows']
+    
+    async def read_first_row(self, table: str, **kwargs) -> Optional[List[Any]]:
+        """Get the first row directly, or None if no results"""
+        result = await self.read(table, **kwargs)
+        rows = result['rows']
+        return rows[0] if rows else None
+    
+    async def read_count(self, table: str, **kwargs) -> int:
+        """Get the count of matching records"""
+        result = await self.read(table, **kwargs)
+        return result['count']
     
     async def __aenter__(self):
         return self
