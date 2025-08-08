@@ -1,7 +1,4 @@
 from typing import Any, Dict, List, Optional
-import logging
-
-logger = logging.getLogger(__name__)
 
 class TursoResponseParser:
     """Helper class to parse Turso database responses"""
@@ -18,7 +15,6 @@ class TursoResponseParser:
             if not response or not isinstance(response, dict):
                 return []
             
-            
             results = response.get('results', [])
             if not results:
                 return []
@@ -34,7 +30,6 @@ class TursoResponseParser:
             result = response_data.get('result', {})
             raw_rows = result.get('rows', [])
             
-            
             parsed_rows = []
             for raw_row in raw_rows:
                 parsed_row = []
@@ -45,12 +40,9 @@ class TursoResponseParser:
                         parsed_row.append(cell)
                 parsed_rows.append(parsed_row)
             
-            logger.debug(f"Parsed {len(parsed_rows)} rows from Turso response")
             return parsed_rows
             
-        except Exception as e:
-            logger.error(f"Error parsing Turso response: {e}")
-            logger.debug(f"Raw response: {response}")
+        except Exception:
             return []
     
     @staticmethod
@@ -77,8 +69,7 @@ class TursoResponseParser:
             
             return [col.get('name', '') for col in cols]
             
-        except Exception as e:
-            logger.error(f"Error extracting columns: {e}")
+        except Exception:
             return []
     
     @staticmethod
@@ -94,5 +85,5 @@ class TursoResponseParser:
             'rows': rows,
             'columns': columns,
             'count': len(rows),
-            'raw_response': response  
+            'raw_response': response
         }
