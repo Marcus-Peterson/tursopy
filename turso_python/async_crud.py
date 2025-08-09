@@ -40,9 +40,10 @@ class AsyncTursoCRUD:
     async def read(self, table: str,
                   where: Optional[str] = None,
                   args: Optional[list[Any]] = None,
-                  columns: str = "*") -> dict[str, Any]:
+                  columns: str = "*",
+                  joins: Optional[List[str]] = None) -> dict[str, Any]:
         """
-        Read records from the table
+        Read records from the table, with optional JOINs.
         
         Returns normalized format:
         {
@@ -52,6 +53,8 @@ class AsyncTursoCRUD:
         }
         """
         sql = f"SELECT {columns} FROM {table}"
+        if joins:
+            sql += " " + " ".join(joins)
         if where:
             sql += f" WHERE {where}"
         
@@ -77,6 +80,21 @@ class AsyncTursoCRUD:
         sql = f"DELETE FROM {table} WHERE {where}"
         raw_result = await self.connection.execute_query(sql, args)
         return TursoResponseParser.normalize_response(raw_result)
+    
+    async def set_foreign_key_checks(self, enable: bool) -> None:
+        """Enable or disable foreign key constraint checks for the current connection."""
+        state = "ON" if enable else "OFF"
+        sql = f"PRAGMA foreign_keys = {state};"
+        await self.connection.execute_query(sql)
+
+    async def get_foreign_key_checks_status(self) -> bool:
+        """Check if foreign key constraint checks are enabled for the current connection."""
+        sql = "PRAGMA foreign_keys;"
+        raw_result = await self.connection.execute_query(sql)
+        normalized = TursoResponseParser.normalize_response(raw_result)
+        if normalized.get('rows') and normalized['rows'][0]:
+            return bool(normalized['rows'][0][0])
+        return False
     
     # Convenience methods for easier data access
     async def read_all_rows(self, table: str, **kwargs) -> List[List[Any]]:
