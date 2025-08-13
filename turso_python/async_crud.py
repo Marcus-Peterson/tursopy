@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Tuple
 from contextlib import asynccontextmanager
 from .async_connection import AsyncTursoConnection
 from .response_parser import TursoResponseParser
@@ -95,6 +95,145 @@ class AsyncTursoCRUD:
         if normalized.get('rows') and normalized['rows'][0]:
             return bool(normalized['rows'][0][0])
         return False
+    
+    
+    async def join_query(self, 
+                        base_table: str, 
+                        join_details: Optional[List[Tuple[str, str]]] = None, 
+                        select_columns: str = '*', 
+                        where: Optional[str] = None,
+                        args: Optional[List[Any]] = None) -> dict[str, Any]:
+        """
+        Perform a join query.
+        
+        Args:
+            base_table: The main table to select from
+            join_details: List of tuples (join_table, join_condition)
+            select_columns: Columns to select
+            where: WHERE clause
+            args: Arguments for parameterized query
+        
+        Example:
+            join_details = [("users", "messages.sender_uid = users.uid")]
+        """
+        join_details = join_details or []
+        sql = f"SELECT {select_columns} FROM {base_table}"
+        
+        for join_table, join_condition in join_details:
+            sql += f" JOIN {join_table} ON {join_condition}"
+        
+        if where:
+            sql += f" WHERE {where}"
+        
+        raw_result = await self.connection.execute_query(sql, args or [])
+        return TursoResponseParser.normalize_response(raw_result)
+    
+    async def aggregate_query(self, 
+                             table: str, 
+                             aggregation: str, 
+                             column: str, 
+                             where: Optional[str] = None,
+                             args: Optional[List[Any]] = None) -> dict[str, Any]:
+        """
+        Perform aggregation queries (e.g., COUNT, AVG, SUM, etc.).
+        
+        Args:
+            table: Table name
+            aggregation: Aggregation function (COUNT, AVG, SUM, MIN, MAX)
+            column: Column to aggregate on
+            where: WHERE clause
+            args: Arguments for parameterized query
+        """
+        aggregation_functions = ['COUNT', 'AVG', 'SUM', 'MIN', 'MAX']
+        
+        if aggregation.upper() not in aggregation_functions:
+            raise ValueError(f"Invalid aggregation function. Must be one of {aggregation_functions}")
+        
+        sql = f"SELECT {aggregation.upper()}({column}) FROM {table}"
+        if where:
+            sql += f" WHERE {where}"
+        
+        raw_result = await self.connection.execute_query(sql, args or [])
+        return TursoResponseParser.normalize_response(raw_result)
+    
+    async def subquery_query(self, 
+                            base_table: str, 
+                            subquery: str, 
+                            select_columns: str = '*', 
+                            where: Optional[str] = None,
+                            args: Optional[List[Any]] = None) -> dict[str, Any]:
+        """
+        Perform a query with a subquery.
+        
+        Args:
+            base_table: Base table name
+            subquery: The subquery condition
+            select_columns: Columns to select
+            where: Additional WHERE conditions
+            args: Arguments for parameterized query
+        """
+        sql = f"SELECT {select_columns} FROM {base_table} WHERE {subquery}"
+        if where:
+            sql += f" AND {where}"
+        
+        raw_result = await self.connection.execute_query(sql, args or [])
+        return TursoResponseParser.normalize_response(raw_result)
+    
+    async def order_by_query(self, 
+                            table: str, 
+                            select_columns: str = '*', 
+                            where: Optional[str] = None, 
+                            order_by: Optional[str] = None, 
+                            limit: Optional[int] = None,
+                            args: Optional[List[Any]] = None) -> dict[str, Any]:
+        """
+        Perform a query with sorting and limit.
+        
+        Args:
+            table: Table name
+            select_columns: Columns to select
+            where: WHERE clause
+            order_by: ORDER BY clause
+            limit: LIMIT value
+            args: Arguments for parameterized query
+        """
+        sql = f"SELECT {select_columns} FROM {table}"
+        if where:
+            sql += f" WHERE {where}"
+        if order_by:
+            sql += f" ORDER BY {order_by}"
+        if limit:
+            sql += f" LIMIT {limit}"
+        
+        raw_result = await self.connection.execute_query(sql, args or [])
+        return TursoResponseParser.normalize_response(raw_result)
+    
+    async def complex_where_query(self, 
+                                 table: str, 
+                                 select_columns: str = '*', 
+                                 conditions: Optional[List[str]] = None,
+                                 args: Optional[List[Any]] = None,
+                                 condition_operator: str = 'AND') -> dict[str, Any]:
+        """
+        Perform a query with complex WHERE clauses (AND, OR, parentheses).
+        
+        Args:
+            table: Table name
+            select_columns: Columns to select
+            conditions: List of WHERE conditions
+            args: Arguments for parameterized query
+            condition_operator: Operator to join conditions ('AND' or 'OR')
+        """
+        conditions = conditions or []
+        
+        sql = f"SELECT {select_columns} FROM {table}"
+        
+        if conditions:
+            where_clause = f' {condition_operator} '.join(conditions)
+            sql += f" WHERE ({where_clause})"
+        
+        raw_result = await self.connection.execute_query(sql, args or [])
+        return TursoResponseParser.normalize_response(raw_result)
     
     # Convenience methods for easier data access
     async def read_all_rows(self, table: str, **kwargs) -> List[List[Any]]:
