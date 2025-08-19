@@ -11,7 +11,7 @@ maintainers = [
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-keywords = ["turso", "libsql", "sqlite", "http", "client", "async", "aiohttp"]
+keywords = ["turso", "libsql", "sqlite", "http", "client", "async", "aiohttp", "msgspec"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: Apache Software License",
@@ -19,12 +19,12 @@ classifiers = [
 ]
 
 # Runtime (production) dependencies only
-# Keep minimal: requests for sync, aiohttp+anyio for async, jsonschema for schema validator
+# Keep minimal: requests for sync, aiohttp+anyio for async, msgspec for schema validator
 dependencies = [
   "requests",
   "aiohttp",
   "anyio",
-  "jsonschema",
+  "msgspec",
 ]
 
 [project.optional-dependencies]
