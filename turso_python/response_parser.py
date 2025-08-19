@@ -1,11 +1,12 @@
 
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 
 class TursoResponseParser:
     """Helper class to parse Turso database responses"""
     
     @staticmethod
-    def extract_rows(response: Dict[str, Any]) -> List[List[Any]]:
+    def extract_rows(response: dict[str, Any]) -> list[list[Any]]:
         """
         Extract rows from Turso response format
         
@@ -47,7 +48,7 @@ class TursoResponseParser:
             return []
     
     @staticmethod
-    def extract_columns(response: Dict[str, Any]) -> List[str]:
+    def extract_columns(response: dict[str, Any]) -> list[str]:
         """Extract column names from Turso response"""
         try:
             if not response or not isinstance(response, dict):
@@ -74,7 +75,7 @@ class TursoResponseParser:
             return []
     
     @staticmethod
-    def normalize_response(response: Dict[str, Any]) -> Dict[str, Any]:
+    def normalize_response(response: dict[str, Any]) -> dict[str, Any]:
         """
         Convert Turso response to a normalized format that matches expectations
         Returns: {'rows': [[value1, value2], ...], 'columns': ['col1', 'col2'], 'count': int}

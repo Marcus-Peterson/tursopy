@@ -1,8 +1,11 @@
 from __future__ import annotations
-from typing import Any, Optional, List, Tuple
+
 from contextlib import asynccontextmanager
+from typing import Any
+
 from .async_connection import AsyncTursoConnection
 from .response_parser import TursoResponseParser
+
 
 class AsyncTursoCRUD:
     def __init__(self, connection: AsyncTursoConnection):
@@ -38,10 +41,10 @@ class AsyncTursoCRUD:
         return TursoResponseParser.normalize_response(raw_result)
     
     async def read(self, table: str,
-                  where: Optional[str] = None,
-                  args: Optional[list[Any]] = None,
+                  where: str | None = None,
+                  args: list[Any] | None = None,
                   columns: str = "*",
-                  joins: Optional[List[str]] = None) -> dict[str, Any]:
+                  joins: list[str] | None = None) -> dict[str, Any]:
         """
         Read records from the table, with optional JOINs.
         
@@ -99,10 +102,10 @@ class AsyncTursoCRUD:
     
     async def join_query(self, 
                         base_table: str, 
-                        join_details: Optional[List[Tuple[str, str]]] = None, 
+                        join_details: list[tuple[str, str]] | None = None, 
                         select_columns: str = '*', 
-                        where: Optional[str] = None,
-                        args: Optional[List[Any]] = None) -> dict[str, Any]:
+                        where: str | None = None,
+                        args: list[Any] | None = None) -> dict[str, Any]:
         """
         Perform a join query.
         
@@ -132,8 +135,8 @@ class AsyncTursoCRUD:
                              table: str, 
                              aggregation: str, 
                              column: str, 
-                             where: Optional[str] = None,
-                             args: Optional[List[Any]] = None) -> dict[str, Any]:
+                             where: str | None = None,
+                             args: list[Any] | None = None) -> dict[str, Any]:
         """
         Perform aggregation queries (e.g., COUNT, AVG, SUM, etc.).
         
@@ -160,8 +163,8 @@ class AsyncTursoCRUD:
                             base_table: str, 
                             subquery: str, 
                             select_columns: str = '*', 
-                            where: Optional[str] = None,
-                            args: Optional[List[Any]] = None) -> dict[str, Any]:
+                            where: str | None = None,
+                            args: list[Any] | None = None) -> dict[str, Any]:
         """
         Perform a query with a subquery.
         
@@ -182,10 +185,10 @@ class AsyncTursoCRUD:
     async def order_by_query(self, 
                             table: str, 
                             select_columns: str = '*', 
-                            where: Optional[str] = None, 
-                            order_by: Optional[str] = None, 
-                            limit: Optional[int] = None,
-                            args: Optional[List[Any]] = None) -> dict[str, Any]:
+                            where: str | None = None, 
+                            order_by: str | None = None, 
+                            limit: int | None = None,
+                            args: list[Any] | None = None) -> dict[str, Any]:
         """
         Perform a query with sorting and limit.
         
@@ -211,8 +214,8 @@ class AsyncTursoCRUD:
     async def complex_where_query(self, 
                                  table: str, 
                                  select_columns: str = '*', 
-                                 conditions: Optional[List[str]] = None,
-                                 args: Optional[List[Any]] = None,
+                                 conditions: list[str] | None = None,
+                                 args: list[Any] | None = None,
                                  condition_operator: str = 'AND') -> dict[str, Any]:
         """
         Perform a query with complex WHERE clauses (AND, OR, parentheses).
@@ -236,12 +239,12 @@ class AsyncTursoCRUD:
         return TursoResponseParser.normalize_response(raw_result)
     
     # Convenience methods for easier data access
-    async def read_all_rows(self, table: str, **kwargs) -> List[List[Any]]:
+    async def read_all_rows(self, table: str, **kwargs) -> list[list[Any]]:
         """Get just the rows data directly"""
         result = await self.read(table, **kwargs)
         return result['rows']
     
-    async def read_first_row(self, table: str, **kwargs) -> Optional[List[Any]]:
+    async def read_first_row(self, table: str, **kwargs) -> list[Any] | None:
         """Get the first row directly, or None if no results"""
         result = await self.read(table, **kwargs)
         rows = result['rows']
