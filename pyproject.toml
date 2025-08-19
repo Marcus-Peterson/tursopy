@@ -37,6 +37,7 @@ dev = [
   "requests-mock",
   "aioresponses",
   "ruff",
+  "types-requests"
 ]
 
 [build-system]

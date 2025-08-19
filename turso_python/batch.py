@@ -7,20 +7,25 @@ class TursoBatch:
         self.connection = connection
 
     def batch_insert(self, table, data_list):
-        """Insert multiple rows into a table."""
+        """Insert multiple rows into a table.
+        Uses the connection.batch helper so argument typing/serialization is consistent
+        with single-statement execute_query. This avoids float-as-string issues.
+        """
         if not data_list:
             return
-        
-        columns = ', '.join(data_list[0].keys())
-        placeholders = ', '.join(['?' for _ in data_list[0]])
-        args_list = [
-            [{"type": TursoCRUD._infer_type(value), "value": str(value)} for value in row.values()]
+
+        # Ensure consistent column order across rows
+        keys = list(data_list[0].keys())
+        columns = ', '.join(keys)
+        placeholders = ', '.join(['?' for _ in keys])
+
+        queries = [
+            {
+                'sql': f"INSERT INTO {table} ({columns}) VALUES ({placeholders})",
+                'args': [row[k] for k in keys],
+            }
             for row in data_list
         ]
-        queries = [
-            {'type': 'execute', 'stmt': {'sql': f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", 'args': args}}
-            for args in args_list
-        ]
-        return self.connection.execute_pipeline(queries)
-    
-    
+
+        # Delegate to connection.batch which formats args appropriately
+        return self.connection.batch(queries)

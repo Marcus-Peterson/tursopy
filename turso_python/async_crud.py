@@ -96,7 +96,22 @@ class AsyncTursoCRUD:
         raw_result = await self.connection.execute_query(sql)
         normalized = TursoResponseParser.normalize_response(raw_result)
         if normalized.get('rows') and normalized['rows'][0]:
-            return bool(normalized['rows'][0][0])
+            val = normalized['rows'][0][0]
+            # Coerce common types reliably: integers 0/1, strings '0'/'1'/'on'/'off'
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, int):
+                return val != 0
+            try:
+                return int(str(val)) != 0
+            except Exception:
+                sval = str(val).strip().lower()
+                if sval in {"on", "true", "yes"}:
+                    return True
+                if sval in {"off", "false", "no"}:
+                    return False
+                # Fallback: non-empty string treated as True only if equals '1'
+                return sval == "1"
         return False
     
     

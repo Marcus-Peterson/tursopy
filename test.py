@@ -86,12 +86,18 @@ from turso_python.schema_validator import SchemaValidator  # noqa: E402
 def main_2():
     # Create a connection to the database
     connection = TursoConnection()
-
+    schema_manager = TursoSchemaManager()
     # Create instances of the classes
     turso_batch = TursoBatch(connection)
     # turso_logger used only for logging examples; remove to satisfy linter
     schema_validator = SchemaValidator()
     turso_advanced_queries = TursoAdvancedQueries(connection)
+
+    # Test 1: Create a table
+    print("Testing create_table for USERS...")
+    schema = {"id": "INTEGER PRIMARY KEY", "name": "TEXT", "age": "INTEGER"}
+    result = schema_manager.create_table("users", schema)
+    print("Create Table Result:", result)
 
     # Test: Insert batch of data
     data = [
@@ -100,17 +106,36 @@ def main_2():
         {"id": 3, "name": "Charlie", "age": 35}
     ]
     
-    logging.info("Testing batch insert...")
+    logging.info("Testing batch insert for USERS...")
     try:
         result = turso_batch.batch_insert("users", data)
         logging.info("Batch insert result: %s", result)
     except Exception as e:
         logging.error("Error during batch insert: %s", e)
 
-    # Test: Execute a single query
-    logging.info("Testing single query execution...")
+    # Test 1: Create a table
+    print("Testing create_table for ORDERS...")
+    schema = {"id": "INTEGER PRIMARY KEY", "user_id": "INTEGER", "order_num": "INTEGER", "amount": "REAL"}
+    result = schema_manager.create_table("orders", schema)
+    print("Create Table Result:", result)
+
+    data = [
+        {"id": 1, "user_id": 1, "order_num": 1001, "amount": 250.75},
+        {"id": 2, "user_id": 1, "order_num": 1002, "amount": 150.00},
+        {"id": 3, "user_id": 2, "order_num": 1003, "amount": 300.50}
+    ]
+
+    logging.info("Testing batch insert for ORDERS...")
     try:
-        result = connection.execute_query("SELECT * FROM users")
+        result = turso_batch.batch_insert("orders", data)
+        logging.info("Batch insert result: %s", result)
+    except Exception as e:
+        logging.error("Error during batch insert: %s", e)
+
+    # Test: Execute a single query
+    logging.info("Testing single query execution for ORDERS...")
+    try:
+        result = connection.execute_query("SELECT * FROM orders")
         logging.info("Query result: %s", result)
     except Exception as e:
         logging.error("Error during query execution: %s", e)
@@ -119,11 +144,21 @@ def main_2():
     logging.info("Testing join query...")
     try:
         result = turso_advanced_queries.join_query(
-            "users", "orders", "users.id = orders.user_id", "users.name, orders.amount", "users.age > 30"
+            "users", [("orders", "users.id = orders.user_id")], "users.name, orders.amount", "users.age > 30"
         )
         logging.info("Join query result: %s", result)
     except Exception as e:
         logging.error("Error during join query: %s", e)
+
+    # Test 11: Drop table
+    print("Testing drop_table...")
+    result = schema_manager.drop_table("users")
+    print("Drop Table Result:", result)
+
+    # Test 12: Drop table
+    print("Testing drop_table...")
+    result = schema_manager.drop_table("orders")
+    print("Drop Table Result:", result)
 
     # Test: Schema validation
     logging.info("Testing schema validation...")
@@ -148,11 +183,10 @@ def main_2():
 
     try:
         schema_validator.validate_input(invalid_data, schema)
-        logging.info("Invalid data passed validation.")
+        logging.error("Invalid data passed validation. [WRONG]")
     except ValueError as e:
-        logging.error("Invalid data failed validation: %s", e)
+        logging.info("Invalid data failed validation: %s [CORRECT]", e)
 
 if __name__ == "__main__":
-    #main_1()           #Uncomment to test
-    #main_2()           #Uncomment to test
-    pass
+    main_1()           #Uncomment to test
+    main_2()           #Uncomment to test
