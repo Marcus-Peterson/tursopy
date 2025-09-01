@@ -33,13 +33,16 @@ If pip install doesn't work, clone the project or download the zip from the real
 1. Set up your environment variables (or pass explicitly to the client). Do not commit secrets.
 
 - On Linux/macOS:
+  ```bash
   export TURSO_DATABASE_URL="libsql://your_database_url"
   export TURSO_AUTH_TOKEN={{TURSO_AUTH_TOKEN}}
-
+  ```
+  
 - On Windows (PowerShell):
+  ```bash
   setx TURSO_DATABASE_URL "libsql://your_database_url"
   setx TURSO_AUTH_TOKEN "{{TURSO_AUTH_TOKEN}}"
-
+  ```
 Note: The client accepts libsql:// and normalizes it to https:// automatically for HTTP calls.
 
 
