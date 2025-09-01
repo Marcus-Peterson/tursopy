@@ -1,18 +1,29 @@
-# Import classes and methods from the module files
-from .turso_python.advanced_queries import TursoAdvancedQueries
-from .turso_python.batch import TursoBatch
+# Package exports
+from .advanced_queries import TursoAdvancedQueries
+from .batch import TursoBatch
+from .connection import TursoConnection
 from .crud import (
     TursoClient,
-    TursoSchemaManager,
-    TursoDataManager,
     TursoCRUD,
+    TursoDataManager,
+    TursoSchemaManager,
 )
-from .schema_validator import SchemaValidator
+from .exceptions import TursoError, TursoHTTPError, TursoRateLimitError
 from .logger import TursoLogger
+from .result import Result
+from .schema_validator import SchemaValidator
 from .turso_vector import TursoVector
-from .connection import TursoConnection
 
-# Define what should be exported when using `from <module> import *`
+# Optional async exports; do not hard-fail if aiohttp is not installed yet
+try:
+    from .async_connection import AsyncTursoConnection  # type: ignore
+    from .async_crud import AsyncTursoCRUD  # type: ignore
+    _ASYNC_AVAILABLE = True
+except Exception:  # ImportError or runtime issues
+    AsyncTursoConnection = None  # type: ignore
+    AsyncTursoCRUD = None  # type: ignore
+    _ASYNC_AVAILABLE = False
+
 __all__ = [
     "TursoAdvancedQueries",
     "TursoBatch",
@@ -23,5 +34,15 @@ __all__ = [
     "SchemaValidator",
     "TursoLogger",
     "TursoVector",
-    "TursoConnection"
+    "TursoConnection",
+    # Exceptions and result types
+    "TursoError",
+    "TursoHTTPError",
+    "TursoRateLimitError",
+    "Result",
 ]
+if _ASYNC_AVAILABLE:
+    __all__ += [
+        "AsyncTursoConnection",
+        "AsyncTursoCRUD",
+    ]

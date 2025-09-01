@@ -1,15 +1,29 @@
-#Contains CRUD operations.
-import os
-import requests
-from dotenv import load_dotenv
+# Contains CRUD operations (synchronous helpers).
+# New asynchronous equivalents are provided in async_connection.py and async_crud.py
+# This module intentionally does not use python-dotenv.
+
 import json
-# Load environment variables
-load_dotenv()
+import os
+
+import requests
+
+
+def _normalize_database_url(url: str) -> str:
+    if url.startswith("libsql://"):
+        return "https://" + url[len("libsql://"):]
+    return url
 
 class TursoClient:
-    def __init__(self, database_url=None, auth_token=None):
-        self.database_url = database_url or os.getenv("TURSO_DATABASE_URL")
-        self.auth_token = auth_token or os.getenv("TURSO_AUTH_TOKEN")
+    def __init__(self, database_url: str | None = None, auth_token: str | None = None, *, timeout: int = 30):
+        env_url = os.getenv("TURSO_DATABASE_URL")
+        env_token = os.getenv("TURSO_AUTH_TOKEN")
+        if not (database_url or env_url):
+            raise ValueError("database_url not provided and TURSO_DATABASE_URL is not set")
+        if not (auth_token or env_token):
+            raise ValueError("auth_token not provided and TURSO_AUTH_TOKEN is not set")
+        self.database_url = _normalize_database_url(database_url or env_url)  # type: ignore[arg-type]
+        self.auth_token = auth_token or env_token  # type: ignore[assignment]
+        self.timeout = timeout
         self.headers = {
             'Authorization': f'Bearer {self.auth_token}',
             'Content-Type': 'application/json'
@@ -59,7 +73,7 @@ class TursoClient:
         }
 
         response = requests.post(
-            f"{self.database_url}/v2/pipeline", json=payload, headers=self.headers
+            f"{self.database_url}/v2/pipeline", json=payload, headers=self.headers, timeout=self.timeout
         )
 
         if response.status_code == 200:
@@ -86,7 +100,7 @@ class TursoClient:
         }
 
         response = requests.post(
-            f"{self.database_url}/v2/pipeline", json=payload, headers=self.headers
+            f"{self.database_url}/v2/pipeline", json=payload, headers=self.headers, timeout=self.timeout
         )
 
         if response.status_code == 200:
@@ -102,7 +116,19 @@ class TursoClient:
         """
         if not args:
             return []
-        return [{"type": "text" if isinstance(arg, str) else "integer", "value": str(arg)} for arg in args]
+        formatted = []
+        for arg in args:
+            if arg is None:
+                formatted.append({"type": "null", "value": "null"})
+            elif isinstance(arg, bool):
+                formatted.append({"type": "integer", "value": "1" if arg else "0"})
+            elif isinstance(arg, int):
+                formatted.append({"type": "integer", "value": str(arg)})
+            elif isinstance(arg, float):
+                formatted.append({"type": "float", "value": str(arg)})
+            else:
+                formatted.append({"type": "text", "value": str(arg)})
+        return formatted
 
 class TursoSchemaManager(TursoClient):
     def create_table(self, table_name, schema):

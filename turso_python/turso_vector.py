@@ -1,5 +1,7 @@
-from turso_python.connection import TursoConnection
 import json
+
+from turso_python.connection import TursoConnection
+
 """
 -   Vector embeddings
 -   This client is used for creating vector embeddings, vector search and more

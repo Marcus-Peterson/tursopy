@@ -1,0 +1,13 @@
+# Ignore local environment files and venvs
+.env
+.env*/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.build/
+dist/
+*.egg-info/
+
+# Do not commit uv's lockfile
+uv.lock

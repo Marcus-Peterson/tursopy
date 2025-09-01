@@ -1,3 +1,2 @@
-jsonschema
-requests
-python-dotenv
+# This project uses uv for dependency management.
+# See pyproject.toml for dependencies and dev extras.
